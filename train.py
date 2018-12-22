@@ -51,6 +51,8 @@ cell = tf.contrib.rnn.MultiRNNCell(cells, state_is_tuple=True)
 # vocab_size -> hidden_size
 embedding = tf.Variable(tf.random_normal(shape=[vocab_size, hidden_size]), dtype=tf.float32)
 inputs = tf.nn.embedding_lookup(embedding, input_data)
+#embedding_lookup 은 embedding 은 문자를 숫자로 바꾸겠다는 의미이며, 결국 룩업 테이블을 만들겠다는 의미이다.
+#embedding을 했다는 것은 input_data가 압축해서 들어가서 word2vec 이 만들어졌다는 의미이다.
 
 # 초기 state 값을 0으로 초기화합니다.
 initial_state = cell.zero_state(state_batch_size, tf.float32)
@@ -72,7 +74,7 @@ loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, lab
 # 옵티마이저를 선언하고 옵티마이저에 Gradient Clipping을 적용합니다.
 # grad_clip(=5)보다 큰 Gradient를 5로 Clippin합니다.
 tvars = tf.trainable_variables()
-grads, _ = tf.clip_by_global_norm(tf.gradients(loss, tvars), grad_clip)
+grads, _ = tf.clip_by_global_norm(tf.gradients(loss, tvars), grad_clip)#값을 전달하기 전에 짤라버린다.
 optimizer = tf.train.AdamOptimizer(learning_rate)
 train_step = optimizer.apply_gradients(zip(grads, tvars))
 
@@ -120,10 +122,11 @@ with tf.Session() as sess:
     state = sess.run(cell.zero_state(1, tf.float32)) # RNN의 최초 state값을 0으로 초기화합니다.
 
     # Random Sampling을 위한 weighted_pick 함수를 정의합니다.
-    def weighted_pick(weights):
-        t = np.cumsum(weights)
-        s = np.sum(weights)
-        return(int(np.searchsorted(t, np.random.rand(1)*s)))
+    def weighted_pick(weights):             # [1, 3, 4, 1]
+        t = np.cumsum(weights)#누적합계         # [1, 4, 8, 9]
+        s = np.sum(weights)                     # 9
+        # [1, 4, 8, 9] / 9 = [1/9, 4/9, 8/9, 9/9]
+        return(int(np.searchsorted(t, np.random.rand(1)*s)))#0.6
 
     ret = prime       # 샘플링 결과를 리턴받을 ret 변수에 첫번째 글자를 할당합니다.
     char = prime[-1]   # Char-RNN의 첫번쨰 인풋을 지정합니다.  
@@ -151,7 +154,7 @@ with tf.Session() as sess:
             else:
                 sample = np.argmax(p)
         else:
-            sample = weighted_pick(p)
+            sample = weighted_pick(p)#항상 큰 값을 선택하는게 아니라 가중치를 통해서 선태하겠다.
 
         pred = chars[sample]
         ret += pred     # 샘플링 결과에 현재 스텝에서 예측한 글자를 추가합니다. (예를들어 pred=L일 경우, ret = HEL -> HELL)

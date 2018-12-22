@@ -15,8 +15,8 @@ class TextLoader():
         self.encoding = encoding
 
         input_file = os.path.join(data_dir, "input.txt")
-        vocab_file = os.path.join(data_dir, "vocab.pkl")
-        tensor_file = os.path.join(data_dir, "data.npy")
+        vocab_file = os.path.join(data_dir, "vocab.pkl")#using cPickle
+        tensor_file = os.path.join(data_dir, "data.npy")#numpy로 저장하는 형태 알아두면 훨씬 좋다.
 
         # 전처리된 파일들("vocab.pkl", "data.npy")이 이미 존재하면 이를 불러오고 없으면 데이터 전처리를 진행합니다.
         if not (os.path.exists(vocab_file) and os.path.exists(tensor_file)):
@@ -34,8 +34,8 @@ class TextLoader():
         with codecs.open(input_file, "r", encoding=self.encoding) as f:
             data = f.read()
         # 데이터에서 문자(character)별 등장횟수를 셉니다.
-        counter = collections.Counter(data)
-        count_pairs = sorted(counter.items(), key=lambda x: -x[1])
+        counter = collections.Counter(data)#글자 발생 횟수를 카운터 한다.
+        count_pairs = sorted(counter.items(), key=lambda x: -x[1])#역순으로 정렬
         self.chars, _ = zip(*count_pairs) # 전체 문자들(Chracters)
         self.vocab_size = len(self.chars) # 전체 문자(단어) 개수
         self.vocab = dict(zip(self.chars, range(len(self.chars)))) # 단어들을 (charcter, id) 형태의 dictionary로 만듭니다.
@@ -66,9 +66,9 @@ class TextLoader():
         # 배치에 필요한 정수만큼의 데이터만을 불러옵니다. e.g. 1115394 -> 1115000
         self.tensor = self.tensor[:self.num_batches * self.batch_size * self.seq_length]
         xdata = self.tensor
-        ydata = np.copy(self.tensor)
+        ydata = np.copy(self.tensor)#객체끼리 공유하기에 따로 보관을 위해 copy 한다.
         # 타겟 데이터는 인풋 데이터를 한칸 뒤로 민 형태로 구성합니다.
-        ydata[:-1] = xdata[1:]
+        ydata[:-1] = xdata[1:]#데이터를 한칸씩 미룬다.
         ydata[-1] = xdata[0]
         # batch_size 크기의 배치를 num_batches 개수 만큼 생성합니다. 
         self.x_batches = np.split(xdata.reshape(self.batch_size, -1),
